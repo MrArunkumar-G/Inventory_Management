@@ -132,7 +132,6 @@ def result():
                 after_transport_startloc_item = cursor.fetchall()
                 cursor.execute("SELECT * FROM {}_products where product_name = %s".format(ending_location), (item,))
                 after_transport_endloc_item = cursor.fetchall()
-#
             return render_template('result.html', starting_location=starting_location, startloc_current=startloc_current[0],ending_location = ending_location, endloc_current=endloc_current[0], after_transport_startloc_item=after_transport_startloc_item[0], after_transport_endloc_item=after_transport_endloc_item[0], item = item)
         #return render_template('result.html')
         except Exception as e:
