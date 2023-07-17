@@ -8,12 +8,11 @@
     <h2>Select City</h2>
     <form method="POST" action="{{ url_for('inventory') }}">
         <select name="city">
-            <option value="Coimbatore">Coimbatore</option>
-            <option value="Erode">Erode</option>
-            <option value="Karur">Karur</option>
-            <option value="Selam">Selam</option>
-            <option value="Tirupur">Tirupur</option>
-        </select><br>
+            {% for location in locations %}
+            <option value="{{ location[1] }}">{{ location[1] }}</option>
+            {% endfor %}
+        </select>
+        
         <input type="submit" value="Submit" class="submit">
     </form>
 

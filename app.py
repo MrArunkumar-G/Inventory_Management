@@ -61,6 +61,7 @@ def locations():
             name = request.form['name']
             cursor.execute('INSERT INTO Location (name) VALUES (%s)', (name,))
             db.commit()
+            cursor.execute('CREATE TABLE {}_products (product_id INT PRIMARY KEY AUTO_INCREMENT,name VARCHAR(100),quantity INT)'.format(name))
         elif 'delete_location' in request.form:
             name = request.form['name']
             cursor.execute('DELETE FROM Location WHERE name = %s', (name,))
@@ -82,65 +83,61 @@ def movements():
 @app.route('/result', methods=['POST'])  # create result page
 def result():
     if request.method == 'POST':
-        # get data from html page
-        starting_location = request.form['Start']
-        ending_location = request.form['End']
-        item = request.form['item']
-        stock_quantity = request.form['kg']
+        try:
+            # get data from html page
+            starting_location = request.form['Start']
+            ending_location = request.form['End']
+            item = request.form['item']
+            stock_quantity = request.form['kg']
 
-        #product Movements
-        cursor.execute('''
-            INSERT INTO ProductMovement (from_location, to_location, product, qty)
-            VALUES (%s, %s, %s, %s)
-        ''', (starting_location, ending_location, item, stock_quantity))
-        db.commit()
+            #product Movements
+            cursor.execute("INSERT INTO ProductMovement (from_location, to_location, product, qty) VALUES (%s, %s, %s, %s)", (starting_location, ending_location, item, stock_quantity,))
+            db.commit()
 
-        # fetching current details
-        cursor.execute("SELECT * FROM districts where City=%s",
-                       (starting_location,))
-        startloc_current = cursor.fetchone()
-        cursor.execute("SELECT * FROM districts where City=%s",
-                       (ending_location,))
-        endloc_current = cursor.fetchone()
+            # fetching current details
+            cursor.execute("SELECT * FROM {}_products".format(starting_location))
+            startloc_current = cursor.fetchall()
+            cursor.execute("SELECT * FROM {}_products".format(ending_location))
+            endloc_current = cursor.fetchall()
 
-        # fetching CURRENT stock record for START and DESTINATION location
+            # fetching CURRENT stock record for START and DESTINATION location
 
-        cursor.execute(
-            "SELECT Stock FROM districts where City=%s", (starting_location,))
-        startloc_current_stock = cursor.fetchone()
-        cursor.execute(
-            "SELECT Stock FROM districts where City=%s", (ending_location,))
-        endloc_current_stock = cursor.fetchone()
+            cursor.execute("SELECT quantity FROM {}_products".format(starting_location))
+            startloc_current_stock = cursor.fetchall()
+            cursor.execute("SELECT quantity FROM {}_products".format(ending_location))
+            endloc_current_stock = cursor.fetchall()
 
-        # POSSIBLE ERRORS
-        # current stock less than transport stock
-        if int(startloc_current_stock[0]) < int(stock_quantity):
-            flash("Goods not available to transport your quantity....")
+            # Consume unread result
+            cursor.fetchall()
+
+            # POSSIBLE ERRORS
+            # current stock less than transport stock
+            if startloc_current_stock[0][0] < int(stock_quantity):
+                flash("Products not available to transport your quantity....")
+                return render_template('index.html')
+            elif str(starting_location) == str(ending_location):  # user selecting same locations
+                flash("Select Appropriate District....")
+                return render_template('index.html')
+            else:
+                # UPDATING stock record
+                startloc_after_stock = int(startloc_current_stock[0][0]) - int(stock_quantity)
+                endloc_after_stock = int(endloc_current_stock[0][0]) + int(stock_quantity)
+                cursor.execute("UPDATE {}_products SET quantity = %s where product_name = %s ".format(starting_location),
+                               (startloc_after_stock, item,))
+                cursor.execute("UPDATE {}_products SET quantity = %s where product_name = %s ".format(ending_location),
+                               (endloc_after_stock, item,))
+
+                # fetching UPDATED stock record for START and DESTINATION location
+                cursor.execute("SELECT * FROM {}_products where product_name = %s".format(starting_location), (item,))
+                after_transport_startloc_item = cursor.fetchall()
+                cursor.execute("SELECT * FROM {}_products where product_name = %s".format(ending_location), (item,))
+                after_transport_endloc_item = cursor.fetchall()
+
+            return render_template('result.html', starting_location=starting_location, startloc_current=startloc_current[0],ending_location = ending_location, endloc_current=endloc_current[0], after_transport_startloc_item=after_transport_startloc_item[0], after_transport_endloc_item=after_transport_endloc_item[0], item = item)
+        #return render_template('result.html')
+        except Exception as e:
+            flash("An error occurred: {}".format(str(e)))
             return render_template('index.html')
-        elif str(starting_location) == str(ending_location):  # user selecting same locations
-            flash("Select Appropriate District....")
-            return render_template('index.html')
-        else:
-            # UPDATING stock record
-            startloc_after_stock = int(
-                startloc_current_stock[0]) - int(stock_quantity)
-            endloc_after_stock = int(
-                endloc_current_stock[0]) + int(stock_quantity)
-            cursor.execute("UPDATE districts SET Stock = %s where City = %s ",
-                           (startloc_after_stock, starting_location,))
-            cursor.execute("UPDATE districts SET Stock = %s where City = %s ",
-                           (endloc_after_stock, ending_location,))
-
-            # fetching UPDATED stock record for START and DESTINATION location
-            cursor.execute(
-                "SELECT * FROM districts where City=%s", (starting_location,))
-            after_transport_startloc_item = cursor.fetchone()
-            cursor.execute(
-                "SELECT * FROM districts where City=%s", (ending_location,))
-            after_transport_endloc_item = cursor.fetchone()
-
-        return render_template('result.html', startloc_current=startloc_current, endloc_current=endloc_current, after_transport_startloc_item=after_transport_startloc_item, after_transport_endloc_item=after_transport_endloc_item, item = item)
-    return render_template('result.html')
 
 
 
