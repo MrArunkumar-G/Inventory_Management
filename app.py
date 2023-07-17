@@ -136,7 +136,7 @@ def result():
         #return render_template('result.html')
         except Exception as e:
             flash("An error occurred: {}".format(str(e)))
-            return render_template('index.html')
+            return render_template('index.html')#
 
 
 
