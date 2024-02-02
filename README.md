@@ -1,4 +1,4 @@
-# Aerele
+# Inventory Management
 
 ![Screenshot_1](https://github.com/MrArunkumar-G/Aerele/assets/131865679/e2fb9737-b48d-4476-8f41-a4d6eccb8176)
 ![Screenshot_2](https://github.com/MrArunkumar-G/Aerele/assets/131865679/8c42de08-48d7-4a1f-bd1b-999daa41c1a5)
